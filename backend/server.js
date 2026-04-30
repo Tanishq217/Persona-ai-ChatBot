@@ -7,8 +7,20 @@ const Groq = require('groq-sdk');
 const { PERSONAS, getPersona } = require('./personas');
 
 const app = express();
-app.use(cors());
+
+// CORS fix for frontend
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
 app.use(express.json());
+
+// Check if API key exists
+if (!process.env.GROQ_API_KEY) {
+  console.error('❌ ERROR: GROQ_API_KEY not found in .env file');
+  console.log('Please create .env file with: GROQ_API_KEY=your_key_here');
+  process.exit(1);
+}
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -21,7 +33,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Get persona details endpoint (for frontend to fetch suggestions dynamically)
+// Get persona details endpoint
 app.get('/api/personas/:personaId', (req, res) => {
   const { personaId } = req.params;
   const persona = getPersona(personaId);
@@ -41,17 +53,16 @@ app.get('/api/personas/:personaId', (req, res) => {
 
 // Main chat endpoint
 app.post('/api/chat', async (req, res) => {
+  console.log('📨 Chat request received:', req.body.personaId, req.body.message?.slice(0, 50));
+  
   try {
     const { personaId, message, history = [] } = req.body;
     
-    // Get persona from registry
     const persona = getPersona(personaId);
-    
     if (!persona) {
-      return res.status(400).json({ error: 'Invalid persona. Available: ' + Object.keys(PERSONAS).join(', ') });
+      return res.status(400).json({ error: 'Invalid persona' });
     }
 
-    // Build conversation history with persona's system prompt
     const messages = [
       { role: 'system', content: persona.systemPrompt },
       ...history.map(msg => ({
@@ -61,39 +72,34 @@ app.post('/api/chat', async (req, res) => {
       { role: 'user', content: message }
     ];
 
-    console.log(`[${persona.name}] Processing: "${message.slice(0, 50)}..."`);
-
-    // Call LLM API
     const completion = await groq.chat.completions.create({
       messages,
-      model: 'llama3-70b-8192', // Using Llama 3 70B for best quality
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
       max_tokens: 350,
     });
 
     const reply = completion.choices[0].message.content;
-    
-    console.log(`[${persona.name}] Response sent (${reply.length} chars)`);
+    console.log('✅ Response sent, length:', reply.length);
     res.json({ reply });
     
   } catch (error) {
-    console.error('API Error:', error);
-    
-    // Graceful error handling
+    console.error('❌ API Error:', error.message);
     res.status(500).json({ 
-      error: 'AI service is currently busy. Please try again in a moment.',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: 'AI service is currently busy. Please try again.',
+      details: error.message
     });
   }
 });
 
-// Get all personas list (for frontend to build UI dynamically)
+// Get all personas
 app.get('/api/personas', (req, res) => {
   const personaList = Object.values(PERSONAS).map(p => ({
     id: p.id,
     name: p.name,
     title: p.title,
-    uiConfig: p.uiConfig
+    uiConfig: p.uiConfig,
+    suggestions: p.suggestions
   }));
   res.json(personaList);
 });
@@ -102,4 +108,5 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
   console.log(`📝 Available personas: ${Object.keys(PERSONAS).join(', ')}`);
+  console.log(`✅ CORS enabled for http://localhost:5173`);
 });
