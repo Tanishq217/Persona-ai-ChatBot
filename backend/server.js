@@ -110,3 +110,14 @@ app.listen(PORT, () => {
   console.log(`📝 Available personas: ${Object.keys(PERSONAS).join(', ')}`);
   console.log(`✅ CORS enabled for http://localhost:5173`);
 });
+
+// Serve frontend files in production
+const path = require('path');
+
+// Serve static files from frontend dist
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Handle all other routes - send to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+});
