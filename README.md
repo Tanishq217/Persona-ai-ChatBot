@@ -101,6 +101,7 @@ npm run dev
 
 Navigate to http://localhost:5173
 
+```
 Persona-ai-ChatBot/
 ├── backend/
 │   ├── server.js              # Express server + API routes
@@ -122,7 +123,7 @@ Persona-ai-ChatBot/
 ├── reflection.md              # Reflection essay (300-500 words)
 ├── README.md                  # This file
 └── package.json               # Root package.json for deployment
-
+```
 
 🧠 Prompt Engineering Techniques Applied
 
