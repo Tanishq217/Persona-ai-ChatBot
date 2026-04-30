@@ -8,7 +8,7 @@ A production-grade conversational AI chatbot that lets you chat with three Scale
 
 ---
 
-## ✨ Features
+## ✨ Features 
 
 | Feature | Description |
 |---------|-------------|
