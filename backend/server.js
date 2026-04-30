@@ -9,10 +9,8 @@ const { PERSONAS, getPersona } = require('./personas');
 const app = express();
 
 // CORS fix for frontend
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://127.0.0.1:5173'],
-  credentials: true
-}));
+const cors = require('cors');
+app.use(cors()); // This allows all origins.
 app.use(express.json());
 
 // Check if API key exists
